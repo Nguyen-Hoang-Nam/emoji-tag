@@ -22,6 +22,7 @@ $ emoji-tag -t emotion
 - [ ] Add consecutive emoji to store tag
 - [ ] Sort emoji when save
 - [ ] Show all tag and emoji
+- [ ] Filter by multiple tags
 
 ## Contributing
 

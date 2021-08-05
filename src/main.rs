@@ -8,7 +8,7 @@ static FIRST_EMOJI: u32 = 127744;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = App::new("emoji-tag")
-        .version("1.0.0")
+        .version("1.1.0")
         .author("N.H Nam <nguyenhoangnam.dev@gmail.com>")
         .about("Get emoji by tag")
         .arg(
@@ -91,10 +91,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         _ => true,
     };
 
+    // Add emoji to a specific tag
     if add != "" && tag != "" {
         let mut tags: Vec<model::EmojiTag>;
         let mut found_tag = false;
-        let mut tag_index: usize = 0;
+        let mut tag_index: Option<usize> = None;
 
         if utils::check_file_exist("emoji-tag.bin") {
             let tags_raw = utils::load("emoji-tag.bin");
@@ -103,7 +104,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             for (index, emoji) in tags.iter().enumerate() {
                 if emoji.tag == tag {
                     found_tag = true;
-                    tag_index = index;
+                    tag_index = Some(index);
                     break;
                 }
             }
@@ -114,10 +115,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 let utf32 = add.chars().nth(0).unwrap() as u32;
 
-                if tags[tag_index].emojis.len() == 0 {
-                    tags[tag_index].emojis += &(utf32 - FIRST_EMOJI).to_string();
+                if tags[tag_index.unwrap()].emojis.len() == 0 {
+                    tags[tag_index.unwrap()].emojis += &(utf32 - FIRST_EMOJI).to_string();
                 } else {
-                    tags[tag_index].emojis = tags[tag_index].emojis.to_string()
+                    tags[tag_index.unwrap()].emojis = tags[tag_index.unwrap()].emojis.to_string()
                         + ","
                         + &(utf32 - FIRST_EMOJI).to_string();
                 }
@@ -227,14 +228,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         if utils::check_file_exist("emoji-tag.bin") {
             let tags_raw = utils::load("emoji-tag.bin");
-            tags = serde_json::from_str(&tags_raw)?;
 
-            for emoji in tags.iter() {
-                if emoji.tag == new_tag {
-                    found_tag = true;
-                    println!("Tag is existed");
-                    break;
+            if tags_raw != "" {
+                tags = serde_json::from_str(&tags_raw)?;
+                for emoji in tags.iter() {
+                    if emoji.tag == new_tag {
+                        found_tag = true;
+                        println!("Tag is existed");
+                        break;
+                    }
                 }
+            } else {
+                tags = vec![];
             }
 
             if !found_tag {
