@@ -5,38 +5,29 @@ static FIRST_EMOJI: u32 = 127744;
 
 pub fn add_emoji(add: &str, tag: &str) -> Result<(), Box<dyn std::error::Error>> {
     if utils::checkk_emoji(add) {
-        let mut tags: Vec<model::EmojiTag>;
-        let mut found_tag = false;
-        let mut tag_index: Option<usize> = None;
-
         if utils::check_file_exist("emoji-tag.bin") {
             let tags_raw = utils::load("emoji-tag.bin");
-            tags = serde_json::from_str(&tags_raw)?;
+            let mut tags: Vec<model::EmojiTag> = serde_json::from_str(&tags_raw)?;
 
-            for (index, emoji) in tags.iter().enumerate() {
-                if emoji.tag == tag {
-                    found_tag = true;
-                    tag_index = Some(index);
-                    break;
+            match utils::find_tag(&tags, tag) {
+                Some(index) => {
+                    let utf32 = add.chars().nth(0).unwrap() as u32;
+
+                    if tags[index].emojis.len() == 0 {
+                        tags[index].emojis += &(utf32 - FIRST_EMOJI).to_string();
+                    } else {
+                        tags[index].emojis = tags[index].emojis.to_string()
+                            + ","
+                            + &(utf32 - FIRST_EMOJI).to_string();
+                    }
+
+                    let json_tag = serde_json::to_string(&tags)?;
+                    utils::save(&json_tag, "emoji-tag.bin");
                 }
-            }
-
-            if !found_tag {
-                println!("Tag Not found");
-                println!("Use emoji-tag -n {} to create tag", tag);
-            } else {
-                let utf32 = add.chars().nth(0).unwrap() as u32;
-
-                if tags[tag_index.unwrap()].emojis.len() == 0 {
-                    tags[tag_index.unwrap()].emojis += &(utf32 - FIRST_EMOJI).to_string();
-                } else {
-                    tags[tag_index.unwrap()].emojis = tags[tag_index.unwrap()].emojis.to_string()
-                        + ","
-                        + &(utf32 - FIRST_EMOJI).to_string();
+                None => {
+                    println!("Tag Not found");
+                    println!("Use emoji-tag -n {} to create tag", tag);
                 }
-
-                let json_tag = serde_json::to_string(&tags)?;
-                utils::save(&json_tag, "emoji-tag.bin");
             }
         } else {
             println!("Not found database")
@@ -53,18 +44,13 @@ pub fn remove_emoji_by_tag(
     tag: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if utils::checkk_emoji(remove_emoji) {
-        let mut tags: Vec<model::EmojiTag>;
-        let mut found_tag = false;
-
         if utils::check_file_exist("emoji-tag.bin") {
             let tags_raw = utils::load("emoji-tag.bin");
-            tags = serde_json::from_str(&tags_raw)?;
+            let mut tags: Vec<model::EmojiTag> = serde_json::from_str(&tags_raw)?;
 
-            for (index, emoji) in tags.iter().enumerate() {
-                if emoji.tag == tag {
-                    found_tag = true;
-
-                    let mut all_emoji: Vec<&str> = emoji.emojis.split(",").collect();
+            match utils::find_tag(&tags, tag) {
+                Some(index) => {
+                    let mut all_emoji: Vec<&str> = tags[index].emojis.split(",").collect();
                     let mut match_index: Option<usize> = None;
 
                     let mut remove_emoji32 = remove_emoji.chars().nth(0).unwrap() as u32;
@@ -73,20 +59,26 @@ pub fn remove_emoji_by_tag(
                     for (emoji_index, emoji_icon) in all_emoji.iter().enumerate() {
                         if emoji_icon == &remove_emoji32.to_string() {
                             match_index = Some(emoji_index);
+                            break;
                         }
                     }
 
-                    all_emoji.remove(match_index.unwrap());
-                    tags[index].emojis = all_emoji.join(",");
-                    break;
-                }
-            }
+                    match match_index {
+                        Some(emoji_index) => {
+                            all_emoji.remove(emoji_index);
+                            tags[index].emojis = all_emoji.join(",");
 
-            if !found_tag {
-                println!("Tag Not found");
-            } else {
-                let json_tag = serde_json::to_string(&tags)?;
-                utils::save(&json_tag, "emoji-tag.bin");
+                            let json_tag = serde_json::to_string(&tags)?;
+                            utils::save(&json_tag, "emoji-tag.bin");
+                        }
+                        None => {
+                            println!("Emoji not found")
+                        }
+                    }
+                }
+                None => {
+                    println!("Tag Not found");
+                }
             }
         } else {
             println!("Not found database")
@@ -99,27 +91,19 @@ pub fn remove_emoji_by_tag(
 }
 
 pub fn remove_all_emoji_by_tag(tag: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let mut tags: Vec<model::EmojiTag>;
-    let mut found_tag = false;
-
     if utils::check_file_exist("emoji-tag.bin") {
         let tags_raw = utils::load("emoji-tag.bin");
-        tags = serde_json::from_str(&tags_raw)?;
+        let mut tags: Vec<model::EmojiTag> = serde_json::from_str(&tags_raw)?;
 
-        for (index, emoji) in tags.iter().enumerate() {
-            if emoji.tag == tag {
-                found_tag = true;
-
+        match utils::find_tag(&tags, tag) {
+            Some(index) => {
                 tags[index].emojis = "".to_string();
-                break;
+                let json_tag = serde_json::to_string(&tags)?;
+                utils::save(&json_tag, "emoji-tag.bin");
             }
-        }
-
-        if !found_tag {
-            println!("Tag Not found");
-        } else {
-            let json_tag = serde_json::to_string(&tags)?;
-            utils::save(&json_tag, "emoji-tag.bin");
+            None => {
+                println!("Tag Not found")
+            }
         }
     } else {
         println!("Not found database")
@@ -129,29 +113,22 @@ pub fn remove_all_emoji_by_tag(tag: &str) -> Result<(), Box<dyn std::error::Erro
 }
 
 pub fn get_tag(tag: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let tags: Vec<model::EmojiTag>;
-    let mut found_tag = false;
-
     if utils::check_file_exist("emoji-tag.bin") {
         let tags_raw = utils::load("emoji-tag.bin");
-        tags = serde_json::from_str(&tags_raw)?;
+        let tags: Vec<model::EmojiTag> = serde_json::from_str(&tags_raw)?;
 
-        for emoji in tags.iter() {
-            if emoji.tag == tag {
-                found_tag = true;
-
-                if emoji.emojis == "" {
+        match utils::find_tag(&tags, tag) {
+            Some(index) => {
+                if tags[index].emojis == "" {
                     println!("Empty");
                 } else {
-                    utils::print_list_emojis(&emoji.emojis);
+                    utils::print_list_emojis(&tags[index].emojis);
                 }
-                break;
             }
-        }
-
-        if !found_tag {
-            println!("Tag Not found");
-            println!("Use emoji-tag -n {} to create tag", tag);
+            None => {
+                println!("Tag Not found");
+                println!("Use emoji-tag -n {} to create tag", tag);
+            }
         }
     } else {
         println!("Not found database")
@@ -228,29 +205,20 @@ pub fn list_tab() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 pub fn remove_tag_by_tag(remove_tag: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let mut tags: Vec<model::EmojiTag>;
-    let mut found_tag = false;
-
     if utils::check_file_exist("emoji-tag.bin") {
         let tags_raw = utils::load("emoji-tag.bin");
-        let mut tag_index: Option<usize> = None;
-        tags = serde_json::from_str(&tags_raw)?;
+        let mut tags: Vec<model::EmojiTag> = serde_json::from_str(&tags_raw)?;
 
-        for (index, emoji) in tags.iter().enumerate() {
-            if emoji.tag == remove_tag {
-                found_tag = true;
-                tag_index = Some(index);
-                break;
+        match utils::find_tag(&tags, remove_tag) {
+            Some(index) => {
+                tags.remove(index);
+
+                let json_tag = serde_json::to_string(&tags)?;
+                utils::save(&json_tag, "emoji-tag.bin");
             }
-        }
-
-        if !found_tag {
-            println!("Tag not found")
-        } else {
-            tags.remove(tag_index.unwrap());
-
-            let json_tag = serde_json::to_string(&tags)?;
-            utils::save(&json_tag, "emoji-tag.bin");
+            None => {
+                println!("Tag not found")
+            }
         }
     }
 

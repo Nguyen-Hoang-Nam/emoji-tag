@@ -1,6 +1,8 @@
 // use crate::model;
 use std::env;
 
+use crate::model;
+
 static FIRST_EMOJI: u32 = 127744;
 
 fn create_not_exist_path(path: &String) {
@@ -120,7 +122,7 @@ pub fn between(num: u32, min: u32, max: u32) -> bool {
 }
 
 pub fn checkk_emoji(emoji_raw: &str) -> bool {
-    if emoji_raw.len() == 1 {
+    if emoji_raw.len() == 0x4 {
         let utf32 = emoji_raw.chars().nth(0).unwrap() as u32;
         if between(utf32, 127744, 128591) {
             return true;
@@ -128,4 +130,17 @@ pub fn checkk_emoji(emoji_raw: &str) -> bool {
     }
 
     return false;
+}
+
+pub fn find_tag(tags: &Vec<model::EmojiTag>, tag: &str) -> Option<usize> {
+    let mut tag_index: Option<usize> = None;
+
+    for (index, emoji) in tags.iter().enumerate() {
+        if emoji.tag == tag {
+            tag_index = Some(index);
+            break;
+        }
+    }
+
+    tag_index
 }
