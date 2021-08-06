@@ -144,3 +144,25 @@ pub fn find_tag(tags: &Vec<model::EmojiTag>, tag: &str) -> Option<usize> {
 
     tag_index
 }
+
+pub fn add_emoji_sort(emojis: &String, emoji: u32) -> String {
+    let mut all_emoji: Vec<&str> = emojis.split(",").collect();
+
+    let add_emoji = emoji - FIRST_EMOJI;
+    // add_emoji -= FIRST_EMOJI;
+
+    let mut add_emoji_str = add_emoji.to_string();
+
+    for (emoji_index, emoji_icon) in all_emoji.iter().enumerate() {
+        if emoji_icon.parse::<u32>().unwrap() > add_emoji {
+            all_emoji.insert(emoji_index, &add_emoji_str);
+            return all_emoji.join(",");
+        } else if emoji_icon.parse::<u32>().unwrap() == add_emoji {
+            return emojis.to_string();
+        }
+    }
+
+    add_emoji_str = emojis.to_owned() + "," + &add_emoji_str;
+
+    return add_emoji_str;
+}

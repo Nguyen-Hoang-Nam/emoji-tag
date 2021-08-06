@@ -19,9 +19,7 @@ pub fn add_emoji(add: &str, tag: &str) -> Result<(), Box<dyn std::error::Error>>
                         if tags[index].emojis.len() == 0 {
                             tags[index].emojis += &(utf32 - FIRST_EMOJI).to_string();
                         } else {
-                            tags[index].emojis = tags[index].emojis.to_string()
-                                + ","
-                                + &(utf32 - FIRST_EMOJI).to_string();
+                            tags[index].emojis = utils::add_emoji_sort(&tags[index].emojis, utf32);
                         }
 
                         let json_tag = serde_json::to_string(&tags)?;
