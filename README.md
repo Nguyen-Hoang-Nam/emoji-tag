@@ -16,12 +16,14 @@ $ emoji-tag -t emotion
 
 ## TODO
 
-- [ ] Add default tag
+- [x] Add default tag
 - [ ] Support color skin
 - [ ] Add bitmap structure to store tag
 - [ ] Add consecutive emoji to store tag
-- [ ] Sort emoji when save
-- [ ] Show all tag and emoji
+- [x] Sort emoji when save
+- [x] Show all tag and emoji
+- [x] Add multiple emojis at once
+- [ ] Fix first emoji
 
 ## Contributing
 

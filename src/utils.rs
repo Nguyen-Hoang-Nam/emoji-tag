@@ -1,6 +1,8 @@
 // use crate::model;
 use std::env;
 
+use crate::model;
+
 static FIRST_EMOJI: u32 = 127744;
 
 fn create_not_exist_path(path: &String) {
@@ -107,10 +109,88 @@ pub fn print_list_emojis(emoji_raw: &String) {
     let mut emoji_list: String = "".to_owned();
 
     let emojis = emoji_raw.split(",");
+    let mut count = 0;
     for emoji in emojis {
+        count += 1;
         let emoji_int: u32 = emoji.parse().unwrap();
         emoji_list.push_str(&from_utf32(emoji_int + FIRST_EMOJI));
+
+        if count % 15 == 0 {
+            emoji_list.push_str("\n\n");
+        } else {
+            emoji_list.push_str(" ");
+        }
     }
 
     print!("{}", emoji_list)
+}
+
+pub fn between(num: u32, min: u32, max: u32) -> bool {
+    num >= min && num <= max
+}
+
+pub fn check_emoji(emoji_raw: &str) -> bool {
+    if emoji_raw.len() <= 0x4 {
+        let utf32 = emoji_raw.chars().nth(0).unwrap() as u32;
+        if between(utf32, 127744, 128591)
+            || between(utf32, 129292, 129535)
+            || between(utf32, 129648, 129750)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+pub fn check_emojis(emojis: &Vec<&str>) -> bool {
+    for emoji in emojis.iter() {
+        if !check_emoji(emoji) {
+            println!("{}", emoji);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+pub fn find_tag(tags: &Vec<model::EmojiTag>, tag: &str) -> Option<usize> {
+    let mut tag_index: Option<usize> = None;
+
+    for (index, emoji) in tags.iter().enumerate() {
+        if emoji.tag == tag {
+            tag_index = Some(index);
+            break;
+        }
+    }
+
+    tag_index
+}
+
+pub fn add_emoji_sort(emojis: &String, emoji: u32) -> String {
+    let mut all_emoji: Vec<&str> = emojis.split(",").collect();
+
+    let add_emoji = emoji - FIRST_EMOJI;
+    // add_emoji -= FIRST_EMOJI;
+
+    let mut add_emoji_str = add_emoji.to_string();
+
+    for (emoji_index, emoji_icon) in all_emoji.iter().enumerate() {
+        if emoji_icon.parse::<u32>().unwrap() > add_emoji {
+            all_emoji.insert(emoji_index, &add_emoji_str);
+            return all_emoji.join(",");
+        } else if emoji_icon.parse::<u32>().unwrap() == add_emoji {
+            return emojis.to_string();
+        }
+    }
+
+    add_emoji_str = emojis.to_owned() + "," + &add_emoji_str;
+
+    return add_emoji_str;
+}
+
+pub fn load_default() {
+    let default_tags: String = savefile::prelude::load_file("default.bin", 0).unwrap();
+
+    save(&default_tags, "emoji-tag.bin");
 }
