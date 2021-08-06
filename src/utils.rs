@@ -114,3 +114,18 @@ pub fn print_list_emojis(emoji_raw: &String) {
 
     print!("{}", emoji_list)
 }
+
+pub fn between(num: u32, min: u32, max: u32) -> bool {
+    num >= min && num <= max
+}
+
+pub fn checkk_emoji(emoji_raw: &str) -> bool {
+    if emoji_raw.len() == 1 {
+        let utf32 = emoji_raw.chars().nth(0).unwrap() as u32;
+        if between(utf32, 127744, 128591) {
+            return true;
+        }
+    }
+
+    return false;
+}
