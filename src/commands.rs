@@ -35,7 +35,7 @@ pub fn add_emoji(add: &Vec<&str>, tag: &str) -> Result<(), Box<dyn std::error::E
                 }
             }
         } else {
-            println!("Not found database")
+            utils::load_default();
         }
     } else {
         println!("Emoji not found")
@@ -90,7 +90,7 @@ pub fn remove_emoji_by_tag(
                 }
             }
         } else {
-            println!("Not found database")
+            utils::load_default();
         }
     } else {
         println!("Emoji not found")
@@ -119,7 +119,7 @@ pub fn remove_all_emoji_by_tag(tag: &str) -> Result<(), Box<dyn std::error::Erro
             }
         }
     } else {
-        println!("Not found database")
+        utils::load_default();
     }
 
     Ok(())
@@ -148,7 +148,7 @@ pub fn get_tag(tag: &str) -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     } else {
-        println!("Not found database")
+        utils::load_default();
     }
 
     Ok(())
@@ -207,12 +207,6 @@ pub fn create_tag(new_tag: &Vec<&str>) -> Result<(), Box<dyn std::error::Error>>
 
             tags.push(new_emoji_tag);
         }
-        // let new_emoji_tag = model::EmojiTag {
-        //     tag: new_tag.to_string(),
-        //     emojis: "".to_string(),
-        // };
-
-        // tags = vec![new_emoji_tag];
 
         let json_tag = serde_json::to_string(&tags)?;
         utils::save(&json_tag, "emoji-tag.bin");
@@ -261,7 +255,7 @@ pub fn remove_tag_by_tag(remove_tag: &str) -> Result<(), Box<dyn std::error::Err
             }
         }
     } else {
-        println!("Not found database")
+        utils::load_default();
     }
 
     Ok(())
@@ -289,7 +283,7 @@ pub fn get_all() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     } else {
-        println!("Not found database")
+        utils::load_default();
     }
 
     Ok(())

@@ -109,9 +109,17 @@ pub fn print_list_emojis(emoji_raw: &String) {
     let mut emoji_list: String = "".to_owned();
 
     let emojis = emoji_raw.split(",");
+    let mut count = 0;
     for emoji in emojis {
+        count += 1;
         let emoji_int: u32 = emoji.parse().unwrap();
         emoji_list.push_str(&from_utf32(emoji_int + FIRST_EMOJI));
+
+        if count % 15 == 0 {
+            emoji_list.push_str("\n\n");
+        } else {
+            emoji_list.push_str(" ");
+        }
     }
 
     print!("{}", emoji_list)
@@ -122,7 +130,7 @@ pub fn between(num: u32, min: u32, max: u32) -> bool {
 }
 
 pub fn check_emoji(emoji_raw: &str) -> bool {
-    if emoji_raw.len() == 0x4 {
+    if emoji_raw.len() <= 0x4 {
         let utf32 = emoji_raw.chars().nth(0).unwrap() as u32;
         if between(utf32, 127744, 128591)
             || between(utf32, 129292, 129535)
@@ -138,6 +146,7 @@ pub fn check_emoji(emoji_raw: &str) -> bool {
 pub fn check_emojis(emojis: &Vec<&str>) -> bool {
     for emoji in emojis.iter() {
         if !check_emoji(emoji) {
+            println!("{}", emoji);
             return false;
         }
     }
@@ -178,4 +187,10 @@ pub fn add_emoji_sort(emojis: &String, emoji: u32) -> String {
     add_emoji_str = emojis.to_owned() + "," + &add_emoji_str;
 
     return add_emoji_str;
+}
+
+pub fn load_default() {
+    let default_tags: String = savefile::prelude::load_file("default.bin", 0).unwrap();
+
+    save(&default_tags, "emoji-tag.bin");
 }
