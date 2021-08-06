@@ -20,9 +20,9 @@ $ emoji-tag -t emotion
 - [ ] Support color skin
 - [ ] Add bitmap structure to store tag
 - [ ] Add consecutive emoji to store tag
-- [ ] Sort emoji when save
-- [ ] Show all tag and emoji
-- [ ] Filter by multiple tags
+- [x] Sort emoji when save
+- [x] Show all tag and emoji
+- [x] Add multiple emojis at once
 
 ## Contributing
 

@@ -121,15 +121,28 @@ pub fn between(num: u32, min: u32, max: u32) -> bool {
     num >= min && num <= max
 }
 
-pub fn checkk_emoji(emoji_raw: &str) -> bool {
+pub fn check_emoji(emoji_raw: &str) -> bool {
     if emoji_raw.len() == 0x4 {
         let utf32 = emoji_raw.chars().nth(0).unwrap() as u32;
-        if between(utf32, 127744, 128591) {
+        if between(utf32, 127744, 128591)
+            || between(utf32, 129292, 129535)
+            || between(utf32, 129648, 129750)
+        {
             return true;
         }
     }
 
     return false;
+}
+
+pub fn check_emojis(emojis: &Vec<&str>) -> bool {
+    for emoji in emojis.iter() {
+        if !check_emoji(emoji) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 pub fn find_tag(tags: &Vec<model::EmojiTag>, tag: &str) -> Option<usize> {

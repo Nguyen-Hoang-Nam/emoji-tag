@@ -34,8 +34,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Arg::with_name("add")
                 .short("a")
                 .long("add")
+                .multiple(true)
                 .help("Add new icon to tag")
                 .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("all")
+                .short("A")
+                .long("all")
+                .help("Show all emojis, and tags"),
         )
         .arg(
             Arg::with_name("remove-emoji")
@@ -65,14 +72,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Arg::with_name("new")
                 .short("n")
                 .long("new")
+                .multiple(true)
                 .help("Add new tag")
                 .takes_value(true),
         )
         .get_matches();
 
     let tag = matches.value_of("tag").unwrap_or("");
-    let add = matches.value_of("add").unwrap_or("");
-    let new_tag = matches.value_of("new").unwrap_or("");
+    let add: Vec<_> = match matches.values_of("add") {
+        Some(values) => values.collect(),
+        None => vec![],
+    };
+
+    let all = match matches.occurrences_of("all") {
+        0 => false,
+        _ => true,
+    };
+
+    let new_tag: Vec<_> = match matches.values_of("new") {
+        Some(values) => values.collect(),
+        None => vec![],
+    };
     let list = match matches.occurrences_of("list") {
         0 => false,
         _ => true,
@@ -91,8 +111,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Add emoji to a specific tag
-    if add != "" && tag != "" {
-        commands::add_emoji(add, tag).unwrap();
+    if add.len() > 0 && tag != "" {
+        commands::add_emoji(&add, tag).unwrap();
 
     // Remove a specific emoji in a specific tag
     } else if remove_emoji != "" && tag != "" {
@@ -107,8 +127,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         commands::get_tag(tag).unwrap();
 
     // Create a new tag
-    } else if new_tag != "" {
-        commands::create_tag(new_tag).unwrap();
+    } else if new_tag.len() > 0 {
+        commands::create_tag(&new_tag).unwrap();
 
     // Show all tag's name
     } else if list {
@@ -121,6 +141,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Remove all tags
     } else if remove_all_tags {
         commands::remove_all_tag();
+
+    // Show all emojis, and tags
+    } else if all {
+        commands::get_all().unwrap();
     } else {
         println!("Wrong arguments")
     }

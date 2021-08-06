@@ -3,8 +3,8 @@ use crate::utils;
 
 static FIRST_EMOJI: u32 = 127744;
 
-pub fn add_emoji(add: &str, tag: &str) -> Result<(), Box<dyn std::error::Error>> {
-    if utils::checkk_emoji(add) {
+pub fn add_emoji(add: &Vec<&str>, tag: &str) -> Result<(), Box<dyn std::error::Error>> {
+    if utils::check_emojis(add) {
         if utils::check_file_exist("emoji-tag.bin") {
             let tags_raw = utils::load("emoji-tag.bin");
             if tags_raw == "" {
@@ -14,12 +14,15 @@ pub fn add_emoji(add: &str, tag: &str) -> Result<(), Box<dyn std::error::Error>>
 
                 match utils::find_tag(&tags, tag) {
                     Some(index) => {
-                        let utf32 = add.chars().nth(0).unwrap() as u32;
+                        for emoji in add.iter() {
+                            let utf32 = emoji.chars().nth(0).unwrap() as u32;
 
-                        if tags[index].emojis.len() == 0 {
-                            tags[index].emojis += &(utf32 - FIRST_EMOJI).to_string();
-                        } else {
-                            tags[index].emojis = utils::add_emoji_sort(&tags[index].emojis, utf32);
+                            if tags[index].emojis.len() == 0 {
+                                tags[index].emojis += &(utf32 - FIRST_EMOJI).to_string();
+                            } else {
+                                tags[index].emojis =
+                                    utils::add_emoji_sort(&tags[index].emojis, utf32);
+                            }
                         }
 
                         let json_tag = serde_json::to_string(&tags)?;
@@ -45,7 +48,7 @@ pub fn remove_emoji_by_tag(
     remove_emoji: &str,
     tag: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    if utils::checkk_emoji(remove_emoji) {
+    if utils::check_emoji(remove_emoji) {
         if utils::check_file_exist("emoji-tag.bin") {
             let tags_raw = utils::load("emoji-tag.bin");
             if tags_raw == "" {
@@ -151,44 +154,65 @@ pub fn get_tag(tag: &str) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub fn create_tag(new_tag: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn create_tag(new_tag: &Vec<&str>) -> Result<(), Box<dyn std::error::Error>> {
     let mut tags: Vec<model::EmojiTag>;
-    let mut found_tag = false;
 
     if utils::check_file_exist("emoji-tag.bin") {
         let tags_raw = utils::load("emoji-tag.bin");
+        let mut non_exist_tag: Vec<&str> = vec![];
 
         if tags_raw != "" {
             tags = serde_json::from_str(&tags_raw)?;
-            for emoji in tags.iter() {
-                if emoji.tag == new_tag {
-                    found_tag = true;
-                    println!("Tag is existed");
-                    break;
+            for tag in new_tag.iter() {
+                let mut found_tag = false;
+                for emoji in tags.iter() {
+                    if &emoji.tag == tag {
+                        found_tag = true;
+                        break;
+                    }
+                }
+
+                if !found_tag {
+                    non_exist_tag.push(tag);
                 }
             }
         } else {
             tags = vec![];
+            for tag in new_tag.iter() {
+                non_exist_tag.push(tag);
+            }
         }
 
-        if !found_tag {
-            let new_emoji_tag = model::EmojiTag {
-                tag: new_tag.to_string(),
-                emojis: "".to_string(),
-            };
+        if non_exist_tag.len() > 0 {
+            for tag in non_exist_tag.iter() {
+                let new_emoji_tag = model::EmojiTag {
+                    tag: tag.to_string(),
+                    emojis: "".to_string(),
+                };
 
-            tags.push(new_emoji_tag);
+                tags.push(new_emoji_tag);
+            }
 
             let json_tag = serde_json::to_string(&tags)?;
             utils::save(&json_tag, "emoji-tag.bin");
         }
     } else {
-        let new_emoji_tag = model::EmojiTag {
-            tag: new_tag.to_string(),
-            emojis: "".to_string(),
-        };
+        tags = vec![];
 
-        tags = vec![new_emoji_tag];
+        for tag in new_tag.iter() {
+            let new_emoji_tag = model::EmojiTag {
+                tag: tag.to_string(),
+                emojis: "".to_string(),
+            };
+
+            tags.push(new_emoji_tag);
+        }
+        // let new_emoji_tag = model::EmojiTag {
+        //     tag: new_tag.to_string(),
+        //     emojis: "".to_string(),
+        // };
+
+        // tags = vec![new_emoji_tag];
 
         let json_tag = serde_json::to_string(&tags)?;
         utils::save(&json_tag, "emoji-tag.bin");
@@ -245,4 +269,28 @@ pub fn remove_tag_by_tag(remove_tag: &str) -> Result<(), Box<dyn std::error::Err
 
 pub fn remove_all_tag() {
     utils::save(&"".to_string(), "emoji-tag.bin");
+}
+
+pub fn get_all() -> Result<(), Box<dyn std::error::Error>> {
+    if utils::check_file_exist("emoji-tag.bin") {
+        let tags_raw = utils::load("emoji-tag.bin");
+        if tags_raw == "" {
+            println!("empty")
+        } else {
+            let tags: Vec<model::EmojiTag> = serde_json::from_str(&tags_raw)?;
+
+            for emoji in tags.iter() {
+                println!("\n\n{}", emoji.tag);
+                if emoji.emojis == "" {
+                    println!("Empty");
+                } else {
+                    utils::print_list_emojis(&emoji.emojis);
+                }
+            }
+        }
+    } else {
+        println!("Not found database")
+    }
+
+    Ok(())
 }
